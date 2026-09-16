@@ -290,11 +290,9 @@ Both apps share a common architecture:
 
 ## Citation
 
-If you use RAPID in your research, please cite this preprint:
+If you use RAPID in your research, please cite:
 
-> RAPID: an interactive R/Shiny platform for end-to-end 16S rRNA and ITS amplicon sequence analysis using DADA2 
-Beant Kapoor, Melissa A. Cregger, Priya Ranjan
-bioRxiv 2026.05.05.723040; doi: https://doi.org/10.64898/2026.05.05.723040 
+> Kapoor, B., Cregger, M., Mead, A., Hamilton, J., & Ranjan, P. (2026). RAPID: An interactive R/Shiny platform for end-to-end 16S rRNA and ITS amplicon sequence analysis using DADA2. Bioinformatics. https://doi.org/10.1093/bioinformatics/btag688
 
 Please also cite the underlying tools:
 
