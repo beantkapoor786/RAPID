@@ -13,11 +13,11 @@ RAPID provides complete, code-free graphical interfaces for amplicon sequence an
 
 Both applications take raw paired-end Illumina FASTQ files as input and produce publication-ready figures, statistical test results, and downloadable data tables - all without writing a single line of code.
 
-<video src="https://github.com/user-attachments/assets/93f8c510-e9fb-49a6-b7db-2d1b79e676b5" autoplay loop muted playsinline width="600"></video>
-
 ![App start up window](../images/16S/00_start_up_new_analysis_or_resume.png)
 
-Please see below for more screenshots.
+Enjoy this amazing short video on what RAPID looks like created using https://github.com/latent-spaces/brag 
+
+<video src="https://github.com/user-attachments/assets/93f8c510-e9fb-49a6-b7db-2d1b79e676b5" autoplay loop muted playsinline width="600"></video>
 
 ---
 
