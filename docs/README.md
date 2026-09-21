@@ -15,7 +15,7 @@ Both applications take raw paired-end Illumina FASTQ files as input and produce 
 
 ![App start up window](../images/16S/00_start_up_new_analysis_or_resume.png)
 
-Enjoy this amazing short video on what RAPID looks like created using https://github.com/latent-spaces/brag 
+Enjoy this amazing short video on what RAPID looks like created using [brag](https://github.com/latent-spaces/brag). 
 
 <video src="https://github.com/user-attachments/assets/93f8c510-e9fb-49a6-b7db-2d1b79e676b5" autoplay loop muted playsinline width="600"></video>
 
