@@ -54,9 +54,10 @@ library(ANCOMBC)
 # with multithread=FALSE.
 can_multithread <- .Platform$OS.type != "windows"
 
-# ── UNITE database URL ──────────────────────────────────────────
+# ── UNITE database URL (general FASTA release, Fungi, v10.0 2025-02-19) ──
+# DOI: 10.15156/BIO/3301229
 
-UNITE_URL <- "https://files.plutof.ut.ee/id/thenewfrontier/fasta/sh_general_release_dynamic_29.11.2022.fasta.tgz"
+UNITE_URL <- "https://s3.hpc.ut.ee/plutof-public/original/9489f7bc-7cc1-4e0a-84dc-c732476b9acd.tgz"
 
 # ── Common forward/reverse patterns ─────────────────────────────────────────
 
@@ -3307,6 +3308,7 @@ server <- function(input, output, session) {
         # Look for any existing UNITE fasta in the directory
         existing_fasta <- list.files(db_dir, pattern = "sh_general.*\\.(fasta|fa)$",
                                      full.names = TRUE, recursive = FALSE)
+        existing_fasta <- existing_fasta[!grepl("_dev\\.fasta$", existing_fasta)]
         if (length(existing_fasta) > 0) {
           unite_file <- existing_fasta[1]
           add_log(7, paste("UNITE database found:", basename(unite_file)), "info")
@@ -3321,6 +3323,7 @@ server <- function(input, output, session) {
             untar(tgz_file, exdir = db_dir)
             fasta_files <- list.files(db_dir, pattern = "sh_general.*\\.fasta$",
                                       full.names = TRUE, recursive = TRUE)
+            fasta_files <- fasta_files[!grepl("_dev\\.fasta$", fasta_files)]
             if (length(fasta_files) > 0) {
               file.copy(fasta_files[1], unite_file)
             }
@@ -3361,8 +3364,8 @@ server <- function(input, output, session) {
           supervise = TRUE
         )
       } else {
-        decipher_db <- file.path(db_dir, "UNITE_v2024.RData")
-        if (file.exists(decipher_db)) {
+        decipher_db <- sort(list.files(db_dir, pattern = "^UNITE_.*\\.RData$", full.names = TRUE), decreasing = TRUE)[1]
+        if (!is.na(decipher_db) && file.exists(decipher_db)) {
           add_log(7, "Running IdTaxa in background subprocess...", "info")
           rv$bg_tax <- callr::r_bg(
             function(seqtab, decipher_db) {

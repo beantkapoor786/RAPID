@@ -96,8 +96,9 @@ ShortRead (Bioconductor), cutadapt (Python)
 
 ### Taxonomy Databases
 
-- **16S app:** SILVA v138.1 is downloaded automatically on first use (~130 MB)
-- **ITS app:** Provide the path to a [UNITE](https://unite.ut.ee/) reference FASTA file, or point to a directory for auto-download
+- **16S app:** SILVA SSU v144 is downloaded automatically on first use (~200 MB)
+  - SILVA 144 adds a **Kingdom** rank (e.g. *Pseudomonadati*, *Bacillati*) between Domain and Phylum, so taxonomy tables have 8 ranks: Domain, Kingdom, Phylum, Class, Order, Family, Genus, Species. RAPID detects this automatically. Older SILVA files (138.x) keep the 7-rank layout. Phylum-level results are not directly comparable between 138.x and 144
+- **ITS app:** Provide the path to a [UNITE](https://unite.ut.ee/) reference FASTA file, or point to a directory for auto-download (UNITE general FASTA release v10.0, 2025-02-19)
 
 ### Session Persistence
 
@@ -149,7 +150,7 @@ All pipeline state is saved automatically to your data directory after each step
 
 ### 16S-Specific Features
 
-- **SILVA database** (v138.1) auto-download for taxonomy assignment
+- **SILVA database** (SSU v144) auto-download for taxonomy assignment
 - **Naive Bayesian classifier** or **IdTaxa** (DECIPHER) for taxonomy
 - **Species-level assignment** via exact sequence matching
 - **Fixed-length truncation** (truncLen) for quality filtering
@@ -261,7 +262,7 @@ Both apps share a common architecture:
 ### Common Issues
 
 **App won't start / package installation fails**
-- Ensure R >= 4.0 is installed
+- Ensure R >= 4.0 is installed (tested with R 4.6.1 / Bioconductor 3.23)
 - Try installing Bioconductor packages manually:
   ```r
   if (!requireNamespace("BiocManager", quietly = TRUE))

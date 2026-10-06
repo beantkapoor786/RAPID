@@ -53,10 +53,26 @@ library(ANCOMBC)
 # with multithread=FALSE.
 can_multithread <- .Platform$OS.type != "windows"
 
-# ── SILVA database URLs (v138.2) ──────────────────────────────────────────
+# ── SILVA database URLs (SSU v144) ────────────────────────────────────────
+# Use the versioned release_<N> path, not current/ — current/ moves on every
+# SILVA release and breaks the old links.
 
-SILVA_GENUS_URL <- "https://www.arb-silva.de/fileadmin/silva_databases/current/DADA2/1.36.0/LSU/silva_nr99_v138.2_toSpecies_trainset.fa.gz"
-SILVA_SPECIES_URL <- "https://www.arb-silva.de/fileadmin/silva_databases/current/DADA2/1.36.0/SSU/silva_v138.2_assignSpecies.fa.gz"
+SILVA_GENUS_URL <- "https://www.arb-silva.de/fileadmin/silva_databases/release_144/DADA2/1.36.0/SSU/silva_nr99_v144_toSpecies_trainset.fa.gz"
+SILVA_SPECIES_URL <- "https://www.arb-silva.de/fileadmin/silva_databases/release_144/DADA2/1.36.0/SSU/silva_v144_assignSpecies.fa.gz"
+
+# SILVA >= 144 inserts a Kingdom rank between Domain and Phylum (e.g.
+# Bacteria;Pseudomonadati;Pseudomonadota;...). Detect it from the training
+# fasta so assignTaxonomy() column names line up with the actual ranks.
+silva_tax_levels <- function(db_file, n = 2000) {
+  hdr <- grep("^>", readLines(db_file, n = n * 2, warn = FALSE), value = TRUE)
+  second <- vapply(strsplit(sub("^>", "", hdr), ";"),
+                   function(x) if (length(x) >= 2) x[2] else NA_character_, character(1))
+  if (mean(grepl("ati$", second), na.rm = TRUE) > 0.5) {
+    c("Domain", "Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species")
+  } else {
+    c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species")
+  }
+}
 
 # ── Common forward/reverse patterns ─────────────────────────────────────────
 
@@ -1265,7 +1281,7 @@ ui <- fluidPage(
           div(
             textInput("silva_db_path", "Database Path or Directory",
                       value = "",
-                      placeholder = "/path/to/silva_nr99_v138.2_toSpecies_trainset.fa.gz")
+                      placeholder = "/path/to/silva_nr99_v144_toSpecies_trainset.fa.gz")
           )
         ),
         numericInput("tax_seed", "Random seed (for reproducible taxonomy)", value = 100, min = 1, step = 1),
@@ -1415,7 +1431,7 @@ ui <- fluidPage(
             div(class = "grid-3", style = "margin-top:12px; margin-bottom:12px;",
               selectInput("bar_x", "X-axis variable", choices = NULL),
               selectInput("bar_fill", "Fill by Taxonomic Rank",
-                choices = c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus"),
+                choices = c("Phylum", "Class", "Order", "Family", "Genus"),
                 selected = "Family"),
               numericInput("bar_top_n", "Top N Taxa", value = 10, min = 5, max = 100)
             ),
@@ -1547,7 +1563,7 @@ ui <- fluidPage(
         div(class = "grid-3",
           selectInput("ancom_group", "Group Variable (for global/pairwise tests)", choices = NULL),
           selectInput("ancom_tax_level", "Taxonomic Level",
-            choices = c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus"),
+            choices = c("Phylum", "Class", "Order", "Family", "Genus"),
             selected = "Genus"),
           selectInput("ancom_p_adj", "P-value Adjustment Method",
             choices = c("holm", "BH", "bonferroni", "fdr", "none"),
@@ -2995,7 +3011,7 @@ server <- function(input, output, session) {
       # Determine which function to run in background
       if (input$tax_method == "bayesian") {
         rv$bg_tax <- callr::r_bg(
-          function(seqtab, genus_file, mt, seed) {
+          function(seqtab, genus_file, tax_levels, mt, seed) {
             library(dada2)
             if (!file.exists(genus_file))
               stop(paste("Database not found:", genus_file))
@@ -3003,17 +3019,18 @@ server <- function(input, output, session) {
             if (length(seqs) == 0)
               stop("Sequence table contains no ASVs - cannot assign taxonomy.")
             set.seed(seed)
-            assignTaxonomy(seqtab, genus_file, multithread = mt)
+            assignTaxonomy(seqtab, genus_file, taxLevels = tax_levels, multithread = mt)
           },
           args = list(
             seqtab = rv$seqtab_nochim, genus_file = genus_file,
+            tax_levels = silva_tax_levels(genus_file),
             mt = can_multithread, seed = input$tax_seed
           ),
           supervise = TRUE
         )
       } else {
-        decipher_db <- file.path(db_dir, "SILVA_SSU_r138_2024.RData")
-        if (file.exists(decipher_db)) {
+        decipher_db <- sort(list.files(db_dir, pattern = "^SILVA_SSU_.*\\.RData$", full.names = TRUE), decreasing = TRUE)[1]
+        if (!is.na(decipher_db) && file.exists(decipher_db)) {
           add_log(6, "Running IdTaxa in background subprocess...", "info")
           rv$bg_tax <- callr::r_bg(
             function(seqtab, decipher_db) {
@@ -3038,7 +3055,7 @@ server <- function(input, output, session) {
         } else {
           add_log(6, paste("DECIPHER training set not found. Falling back to assignTaxonomy."), "warn")
           rv$bg_tax <- callr::r_bg(
-            function(seqtab, genus_file, species_file, add_species, mt, seed) {
+            function(seqtab, genus_file, species_file, add_species, tax_levels, mt, seed) {
               library(dada2)
               if (!file.exists(genus_file))
                 stop(paste("Genus database not found:", genus_file))
@@ -3046,10 +3063,12 @@ server <- function(input, output, session) {
               if (length(seqs) == 0)
                 stop("Sequence table contains no ASVs - cannot assign taxonomy.")
               set.seed(seed)
-              tx <- assignTaxonomy(seqtab, genus_file, multithread = mt)
+              tx <- assignTaxonomy(seqtab, genus_file, taxLevels = tax_levels, multithread = mt)
               if (add_species && nrow(tx) > 0) {
                 if (!file.exists(species_file))
                   stop(paste("Species database not found:", species_file))
+                # toSpecies trainsets already give a Species column; replace it
+                tx <- tx[, colnames(tx) != "Species", drop = FALSE]
                 tx <- addSpecies(tx, species_file)
               }
               tx
@@ -3057,6 +3076,7 @@ server <- function(input, output, session) {
             args = list(
               seqtab = rv$seqtab_nochim, genus_file = genus_file,
               species_file = species_file, add_species = input$add_species,
+              tax_levels = silva_tax_levels(genus_file),
               mt = can_multithread, seed = input$tax_seed
             ),
             supervise = TRUE
@@ -3111,6 +3131,16 @@ server <- function(input, output, session) {
   # ═══════════════════════════════════════════════════════════════════════
   # STEP 7: Phyloseq & Visualization
   # ═══════════════════════════════════════════════════════════════════════
+
+  # Rank dropdowns follow the tax table: SILVA >= 144 adds Domain/Kingdom,
+  # IdTaxa returns lowercase rank names, older sessions may differ again.
+  observeEvent(rv$ps, {
+    ranks <- rank_names(rv$ps)
+    ranks <- ranks[!is.na(ranks) & tolower(ranks) != "species"]
+    pick <- function(want) { m <- ranks[tolower(ranks) == want]; if (length(m)) m[1] else tail(ranks, 1) }
+    updateSelectInput(session, "bar_fill", choices = ranks, selected = pick("family"))
+    updateSelectInput(session, "ancom_tax_level", choices = ranks, selected = pick("genus"))
+  }, ignoreNULL = TRUE)
 
   # ── Metadata variable type selection (factor vs continuous) ──
   output$metadata_vartype_ui <- renderUI({

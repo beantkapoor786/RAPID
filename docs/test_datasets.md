@@ -37,7 +37,7 @@ Point RAPID-16S to the `MiSeq_SOP/` folder after unzipping.
 | Reverse pattern | `_R2_` |
 | truncLen (F) | 240 |
 | truncLen (R) | 160 |
-| Taxonomy database | SILVA v138.1 |
+| Taxonomy database | SILVA SSU v144 |
 
 ---
 
@@ -132,6 +132,6 @@ done
 | Reverse pattern | `_2.fastq` |
 | truncLen (F) | 150 |
 | truncLen (R) | 140 |
-| Taxonomy database | SILVA v138.1 |
+| Taxonomy database | SILVA SSU v144 |
 
 > **Note:** Because this dataset uses 2×150 bp reads (shorter than 2×250 bp), set `truncLen` conservatively - inspect the quality profiles in Step 2 before proceeding.
