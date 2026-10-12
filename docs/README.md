@@ -17,7 +17,7 @@ Both applications take raw paired-end Illumina FASTQ files as input and produce 
 
 Enjoy this amazing short video on what RAPID looks like created using [brag](https://github.com/latent-spaces/brag). 
 
-<video src="https://github.com/user-attachments/assets/93f8c510-e9fb-49a6-b7db-2d1b79e676b5" autoplay loop muted playsinline width="600"></video>
+https://github.com/user-attachments/assets/93f8c510-e9fb-49a6-b7db-2d1b79e676b5
 
 ---
 
